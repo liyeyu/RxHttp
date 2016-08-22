@@ -1,7 +1,5 @@
 package com.liyeyu.rxhttp;
 
-import com.liyeyu.rxhttp.bean.BaseBean;
-
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -34,7 +32,7 @@ public class RetrofitHelper {
         return  mRetrofit.create(clz);
     }
 
-    public static <T extends BaseBean> void request(final HttpCallBack<T> callBack){
+    public static <T> void request(final HttpCallBack<T> callBack){
         if(callBack!=null){
             callBack.request(getRequest(ApiService.class)).enqueue(new Callback() {
                 @Override
@@ -51,7 +49,7 @@ public class RetrofitHelper {
         }
     }
 
-    public interface HttpCallBack<T extends BaseBean>{
+    public interface HttpCallBack<T>{
         Call<T> request(ApiService request);
         void onCompleted(T t);
         void onError(String message);

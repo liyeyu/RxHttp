@@ -9,6 +9,6 @@ public class RxHttpApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        RxHttpCofig.init(getApplicationContext());
+        RxHttpConfig.init(getApplicationContext());
     }
 }

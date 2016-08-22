@@ -32,13 +32,13 @@ dependencies {
 
 ext {
     bintrayRepo = 'maven'
-    bintrayName = 'RxHttp'
+    bintrayName = 'rxhttp'
 
     publishedGroupId = 'com.liyeyu'
-    libraryName = 'RxHttp'
-    artifact = 'RxHttp'
+    libraryName = 'rxhttp'
+    artifact = 'rxhttp'
 
-    libraryDescription = 'RxHttp'
+    libraryDescription = 'rxhttp'
 
     siteUrl = 'https://github.com/liyeyu/RxHttp'
     gitUrl = 'https://github.com/liyeyu/RxHttp.git'
