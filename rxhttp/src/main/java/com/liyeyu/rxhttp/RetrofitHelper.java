@@ -28,13 +28,13 @@ public class RetrofitHelper {
                 .build();
     }
 
-    private static ApiService getRequest(Class<? extends ApiService> clz){
+    private static <API extends ApiService> API getRequest(Class<API> clz){
         return  mRetrofit.create(clz);
     }
 
-    public static <T> void request(final HttpCallBack<T> callBack){
+    public static <T,API extends ApiService> void request(Class<API> clz,final HttpCallBack<T,API> callBack){
         if(callBack!=null){
-            callBack.request(getRequest(ApiService.class)).enqueue(new Callback() {
+            callBack.request(getRequest(clz)).enqueue(new Callback() {
                 @Override
                 public void onResponse(Call call, retrofit2.Response response) {
                     T body = (T) response.body();
@@ -49,8 +49,8 @@ public class RetrofitHelper {
         }
     }
 
-    public interface HttpCallBack<T>{
-        Call<T> request(ApiService request);
+    public interface HttpCallBack<T,API>{
+        Call<T> request(API request);
         void onCompleted(T t);
         void onError(String message);
     }
