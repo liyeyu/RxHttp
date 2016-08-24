@@ -9,8 +9,8 @@ import com.liyeyu.rxhttp.download.DownLoadHelper;
  */
 public class RxHttpConfig {
 
-    public static void init(Context mApp){
-        RetrofitHelper.init();
+    public static void init(Context mApp,String baseUrl){
+        RetrofitHelper.init(baseUrl);
         DownLoadHelper.init(mApp);
     }
 }
