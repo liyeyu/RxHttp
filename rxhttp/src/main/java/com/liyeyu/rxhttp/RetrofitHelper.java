@@ -34,9 +34,8 @@ public class RetrofitHelper {
                 .baseUrl(baseUrl).build();
     }
     public static void setBaseUrl(String baseUrl) {
-        BASE_URL = baseUrl;
-        if(TextUtils.isEmpty(BASE_URL)){
-           init(BASE_URL);
+        if(!TextUtils.isEmpty(BASE_URL)){
+           init(baseUrl);
         }
     }
     private static <API> API getRequest(Class<API> clz){
