@@ -6,18 +6,13 @@ import android.util.Log;
 import com.google.gson.Gson;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
 
 import okhttp3.Interceptor;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -161,38 +156,18 @@ public class RetrofitHelper {
         return null;
     }
 
-    public static <T,API,R extends Map<String, RequestBody>> void uploadImg(Class<API> clz
-            , String[] pathList, final IHttpImgCallBack<T,API,R> callBack){
-        if(pathList==null || callBack==null || clz==null){
-            return;
-        }
-        if(pathList.length > 0) {
-            final Map<String, RequestBody> bodyMap = new HashMap<>();
-            for (int i = 0; i < pathList.length; i++) {
-                File file = new File(pathList[i]);
-                bodyMap.put("file"+i+"\"; filename=\""+file.getName(), RequestBody.create(MediaType.parse("image/png"),file));
+    public static <T> void upload(RxHttpParams params,Class<T> clz
+            , String pathList, final HttpCallBackImpl<T> callBack) {
+        if (!TextUtils.isEmpty(pathList)) {
+            if(params==null){
+                params = new RxHttpParams.Build().build();
             }
-            request(clz, new HttpCallBack<T, API>() {
-                @Override
-                public Call<T> request(API request) {
-                    return callBack.request(request, (R) bodyMap);
-                }
-
-                @Override
-                public void onCompleted(T t) {
-                    if(callBack!=null){
-                        callBack.onCompleted(t);
-                    }
-                }
-
-                @Override
-                public void onError(String message) {
-                    if(callBack!=null){
-                        callBack.onError(message);
-                    }
-                }
-            });
+            String[] split = pathList.split("\\.");
+            String suffix = split[split.length - 1];
+            params.addPart("suffix",suffix);
+            request(params, clz, callBack);
         }
+
     }
 
     public  interface HttpCallBack<T,API> extends IHttpCallBack<T>{
@@ -202,17 +177,12 @@ public class RetrofitHelper {
         void onCompleted(T t);
         void onError(String message);
     }
-    public interface IHttpImgCallBack<T,API,R> extends IHttpCallBack{
-        Call<T> request(API request,R r);
-    }
-
     public static abstract class HttpCallBackImpl<T>{
         public abstract void onCompleted(T t);
 
         public void onError(String message) {
 
         }
-
         public Call<ResponseBody> request(ApiService request) {
             return null;
         }
