@@ -2,10 +2,12 @@ package com.liyeyu.rxhttp;
 
 import android.text.TextUtils;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
 import com.google.gson.Gson;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -165,6 +167,7 @@ public class RetrofitHelper {
             String[] split = pathList.split("\\.");
             String suffix = split[split.length - 1];
             params.addPart("suffix",suffix);
+            params.addPart("file", MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffix),new File(pathList));
             request(params, clz, callBack);
         }
 
