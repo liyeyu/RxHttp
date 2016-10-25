@@ -6,10 +6,8 @@ import android.webkit.MimeTypeMap;
 
 import com.google.gson.Gson;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import okhttp3.Interceptor;
@@ -23,6 +21,10 @@ import retrofit2.Callback;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class RetrofitHelper {
     public static String BASE_URL = "";
@@ -97,40 +99,48 @@ public class RetrofitHelper {
         if(callBack!=null && callBack.request(apiService)!=null){
             call = callBack.request(apiService);
         }else if(params.getParamsBody()!=null){
-            call = apiService.post(url,params.getParamsBody());
+            call = apiService.post(params.getHeads(),url,params.getParamsBody());
         }else if(params.getPartParams().isEmpty() && params.getQueryParams().isEmpty()
                 && params.getPart()==null){
             if(params.getMethod()==RxHttpParams.HttpMethod.POST){
-                call = apiService.post(url);
+                call = apiService.post(params.getHeads(),url);
             }else{
-                call = apiService.get(url);
+                call = apiService.get(params.getHeads(),url);
             }
         }else if(params.getPartParams().isEmpty() && params.getPart()==null){
             if(params.getMethod()==RxHttpParams.HttpMethod.POST){
-                call = apiService.post(url,params.getQueryParams());
+                call = apiService.post(params.getHeads(),url,params.getQueryParams());
             }else{
-                call = apiService.get(url,params.getQueryParams());
+                call = apiService.get(params.getHeads(),url,params.getQueryParams());
             }
         }else  if(params.getQueryParams().isEmpty()){
             if(params.getPartParams().isEmpty()){
-                call = apiService.postPart(url,params.getPart());
+                call = apiService.postPart(params.getHeads(),url,params.getPart());
             }else{
-                call = apiService.postPart(url,params.getPartParams(),params.getPart());
+                call = apiService.postPart(params.getHeads(),url,params.getPartParams(),params.getPart());
             }
         }else{
-            call = apiService.post(url,params.getMultipartBody());
+            call = apiService.post(params.getHeads(),url,params.getMultipartBody());
         }
+        requestCall(call,clz,callBack);
+    }
+
+    public static <T> void requestCall(Call call,final Class<T> clz,final HttpCallBackImpl<T> callBack){
         call.enqueue(new Callback() {
             @Override
             public void onResponse(Call call, retrofit2.Response response) {
                 ResponseBody body = (ResponseBody) response.body();
                 if(body!=null && body.byteStream()!=null){
-                    String s = new String(read(body.byteStream()),Charset.forName("UTF-8"));
+                    String s = new String(FileManager.read(body.byteStream()),Charset.forName("UTF-8"));
                     T t = gson.fromJson(s, clz);
                     if(callBack!=null){
                         callBack.onCompleted(t);
                     }
                     Log.i("ResponseBody",s);
+                }else{
+                    if(callBack!=null){
+                        callBack.onError("onResponse error");
+                    }
                 }
             }
 
@@ -143,34 +153,79 @@ public class RetrofitHelper {
         });
     }
 
-    private static byte[] read(InputStream inputStream){
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try {
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                output.write(buffer, 0, bytesRead);
-            }
-            return output.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public static <T> void upload(RxHttpParams params,Class<T> clz
             , String pathList, final HttpCallBackImpl<T> callBack) {
         if (!TextUtils.isEmpty(pathList)) {
             if(params==null){
-                params = new RxHttpParams.Build().build();
+                throw new NullPointerException("params is null");
             }
             String[] split = pathList.split("\\.");
             String suffix = split[split.length - 1];
-            params.addPart("suffix",suffix);
             params.addPart("file", MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffix),new File(pathList));
             request(params, clz, callBack);
         }
 
+    }
+
+    public static void download(final RxHttpParams params
+            ,final String path,final String name,final HttpCallBackImpl<String> callBack) {
+        if (!TextUtils.isEmpty(path)) {
+            if(params==null){
+                throw new NullPointerException("params is null");
+            }
+            final String filePath = path + File.separator + name;
+            ApiService apiService = mRetrofit.create(ApiService.class);
+            Call<ResponseBody> download = apiService.download(params.getHeads(), params.getUrl(), params.getQueryParams());
+            download.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
+                    final ResponseBody body = response.body();
+                    if(body!=null && body.byteStream()!=null){
+                        Observable.create(new Observable.OnSubscribe<ProgressInfo>() {
+                            @Override
+                            public void call(Subscriber<? super ProgressInfo> subscriber) {
+                                FileManager.writeResponseBodyToDisk(filePath,body,subscriber);
+                            }
+                        }).subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Subscriber<ProgressInfo>() {
+                            @Override
+                            public void onCompleted() {
+                                if(callBack!=null){
+                                    callBack.onCompleted(filePath);
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                if(callBack!=null){
+                                    callBack.onError(e.toString());
+                                }
+                            }
+
+                            @Override
+                            public void onNext(ProgressInfo info) {
+                                OnProgressListener mProgressListener = params.getProgressListener();
+                                if(mProgressListener!=null){
+                                    mProgressListener.onProgress(info.writtenLen,info.totalLen,info.hasFinish);
+                                }
+                            }
+                        });
+                    }else{
+                        if(callBack!=null){
+                            callBack.onError("onResponse error");
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    if(callBack!=null){
+                        callBack.onError(t.getMessage());
+                    }
+                }
+            });
+        }
     }
 
     public  interface HttpCallBack<T,API> extends IHttpCallBack<T>{

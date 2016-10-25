@@ -1,5 +1,7 @@
 package com.liyeyu.rxhttp;
 
+import android.webkit.MimeTypeMap;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,11 +22,19 @@ public final class RxHttpParams {
     private Map<String, RequestBody> partParams = new HashMap<>();
     private MultipartBody.Part mPart;
     private MultipartBody mMultipartBody;
+    private Map<String, String> heads = new HashMap<>();
+    private OnProgressListener mProgressListener;
 
     private RxHttpParams() {
     }
     public void addQuery(String key,String value){
         queryParams.put(key,value);
+    }
+    public void addHead(String key,String value){
+        heads.put(key,value);
+    }
+    public Map<String, String> getHeads(){
+        return heads;
     }
     public void addPart(String key,String value){
         RequestBody requestBody = RequestBody.create(MediaType.parse("text/plain"), value);
@@ -32,7 +42,13 @@ public final class RxHttpParams {
     }
     public void addPart(String key,String type,File file){
         RequestBody requestBody = RequestBody.create(MediaType.parse(type), file);
-        mPart = MultipartBody.Part.createFormData(key,file.getName(),requestBody);
+        mPart = MultipartBody.Part.createFormData(key,file.getName(),new ProgressRequestBody(requestBody,mProgressListener));
+    }
+    public void addPart(String key,File file){
+        String[] split = file.getPath().split("\\.");
+        String suffix = split[split.length - 1];
+        RequestBody requestBody = RequestBody.create(MediaType.parse(MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffix)), file);
+        mPart = MultipartBody.Part.createFormData(key,file.getName(),new ProgressRequestBody(requestBody,mProgressListener));
     }
     public void addMultipartBody(String key,String[] types,File[] files){
         if(types==null||files==null){
@@ -97,6 +113,13 @@ public final class RxHttpParams {
         mMultipartBody = multipartBody;
     }
 
+    public void setProgressListener(OnProgressListener progressListener) {
+        mProgressListener = progressListener;
+    }
+
+    public OnProgressListener getProgressListener() {
+        return mProgressListener;
+    }
 
     public static class Build{
         private RxHttpParams params;
@@ -111,6 +134,10 @@ public final class RxHttpParams {
             params.method = method;
             return this;
         }
+        public Build addHead(String key,String value){
+            params.addHead(key,value);
+            return this;
+        }
         public Build addQuery(String key,String value){
             params.addQuery(key,value);
             return this;
@@ -121,6 +148,10 @@ public final class RxHttpParams {
         }
         public Build addPart(String key,String type,File value){
             params.addPart(key,type,value);
+            return this;
+        }
+        public Build addPart(String key,File value){
+            params.addPart(key,value);
             return this;
         }
         public Build addMultipartBody(String key,String[] types,File[] files){

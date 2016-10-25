@@ -27,7 +27,6 @@ dependencies {
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
     compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
-    compile 'com.liulishuo.filedownloader:library:1.0.0'
     compile 'com.squareup.okhttp3:logging-interceptor:3.4.1'
 }
 
@@ -44,7 +43,7 @@ ext {
     siteUrl = 'https://github.com/liyeyu/RxHttp'
     gitUrl = 'https://github.com/liyeyu/RxHttp.git'
 
-    libraryVersion = '1.0.5bate3'
+    libraryVersion = '1.0.6'
 
     developerId = 'liyeyu'
     developerName = 'liyeyu'

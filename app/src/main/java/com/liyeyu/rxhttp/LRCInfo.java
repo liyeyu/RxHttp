@@ -95,5 +95,25 @@ public class LRCInfo {
         public void setSid(int sid) {
             this.sid = sid;
         }
+
+        @Override
+        public String toString() {
+            return "ResultBean{" +
+                    "aid=" + aid +
+                    ", artist_id=" + artist_id +
+                    ", song='" + song + '\'' +
+                    ", lrc='" + lrc + '\'' +
+                    ", sid=" + sid +
+                    '}';
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "LRCInfo{" +
+                "count=" + count +
+                ", code=" + code +
+                ", result=" + result +
+                '}';
     }
 }
