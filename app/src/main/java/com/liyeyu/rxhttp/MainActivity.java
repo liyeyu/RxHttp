@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
 //
 //            }
 //        });
+        RetrofitHelper.setBaseUrl("http://geci.me/api/lyric/");
         RxHttpParams rxHttpParams = new RxHttpParams.Build()
                 .url("海阔天空/Beyond")
                 .paramsBody(new BaseInfo(123))
